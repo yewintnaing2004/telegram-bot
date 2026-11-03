@@ -1,7 +1,7 @@
 import telebot
 
 # Bot Token ကို ထည့်သွင်းထားပါသည်
-BOT_TOKEN = "9169151678:AAEbPtKATHVTd_TngxpbSufQRNj9JzlA3gg"
+BOT_TOKEN = "9169151678:AAEbPtkAThVTd_TngxpbSufQRNj9JzlA3gg"
 bot = telebot.TeleBot(BOT_TOKEN)
 
 # /start ခေါ်ဆိုသည့်အခါ ပြန်မည့် စာသား
