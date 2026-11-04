@@ -1,8 +1,10 @@
 import telebot
 from telebot import types
 
-# Bot Token ကို ထည့်သွင်းထားပါသည်
+# Bot Token နှင့် Channel ID ကို ဤနေရာတွင် ထည့်သွင်းပါ
 BOT_TOKEN = "9169151678:AAEbPtkAThVTd_TngxpbSufQRNj9JzlA3gg"
+CHANNEL_ID = "@BetMyanmarTips"  # သင်၏ Channel Username (သို့မဟုတ် ID) ကို ထည့်ပါ
+
 bot = telebot.TeleBot(BOT_TOKEN)
 
 # သိမ်းဆည်းရန် ယာယီနေရာ (User State)
@@ -42,10 +44,26 @@ def callback_query(call):
 def handle_messages(message):
     chat_id = message.chat.id
     state = user_states.get(chat_id)
+    user_name = message.from_user.first_name
+    username = f"@{message.from_user.username}" if message.from_user.username else "username မရှိပါ"
     
     # 1) ငွေသွင်းရန် ID တောင်းနေစဉ်
     if state == "waiting_deposit_id":
+        xbet_id = message.text
         user_states[chat_id] = "waiting_deposit_slip"
+        
+        # Channel သို့ အကြောင်းကြားစာ ပို့ခြင်း
+        try:
+            bot.send_message(
+                CHANNEL_ID, 
+                f"🔔 **ငွေသွင်းရန် ID တောင်းဆိုမှု အသစ်**\n\n"
+                f"👤 အမည်: {user_name} ({username})\n"
+                f"🆔 1xBet ID: `{xbet_id}`", 
+                parse_mode="Markdown"
+            )
+        except Exception as e:
+            print(f"Channel Error: {e}")
+
         bot.reply_to(message, (
             "ကျေးဇူးတင်ပါတယ်ရှင် 🙏\n\n"
             "💳 **ငွေလွှဲရန် အကောင့်အချက်အလက်**\n"
@@ -57,16 +75,43 @@ def handle_messages(message):
     # 2) ငွေသွင်းရန် စလစ်ပုံ သို့မဟုတ် အချက်အလက် ပို့သည့်အခါ
     elif state == "waiting_deposit_slip":
         user_states.pop(chat_id, None)
+        
+        # Channel သို့ စလစ် သို့မဟုတ် ပုံ ပို့ပေးခြင်း
+        try:
+            if message.content_type == 'photo':
+                bot.send_photo(CHANNEL_ID, message.photo[-1].file_id, caption=f"📥 **ငွေသွင်းစလစ် (User: {user_name})**", parse_mode="Markdown")
+            else:
+                bot.send_message(CHANNEL_ID, f"📥 **ငွေသွင်းအချက်အလက် (User: {user_name}):** {message.text}", parse_mode="Markdown")
+        except Exception as e:
+            print(f"Channel Error: {e}")
+
         bot.reply_to(message, "✅ ငွေလွှဲချက် လက်ခံရရှိပါပြီရှင်။ စစ်ဆေးပြီး အမြန်ဆုံး ဖြည့်တင်းပေးပါမယ်နော် ✨")
 
     # 3) ငွေထုတ်ရန် ID ရပြီးပါက ထုတ်မယ့်ပမာဏ တောင်းခံရန်
     elif state == "waiting_withdraw_id":
-        user_states[chat_id] = f"waiting_withdraw_amount_{message.text}"
+        xbet_id = message.text
+        user_states[chat_id] = f"waiting_withdraw_amount_{xbet_id}"
         bot.reply_to(message, "💰 ထုတ်ယူလိုသည့် ပမာဏ (ငွေပမာဏ) ကို ထပ်မံ ပို့ပေးပါရှင် ✍️")
 
     # 4) ငွေထုတ်မယ့်ပမာဏ ရရှိသွားပါက လွှဲရန်အချက်အလက်ပေးပြီး စစ်ဆေးရန်
     elif state and state.startswith("waiting_withdraw_amount_"):
+        xbet_id = state.replace("waiting_withdraw_amount_", "")
+        withdraw_amount = message.text
         user_states.pop(chat_id, None)
+        
+        # Channel သို့ ငွေထုတ်တောင်းဆိုမှု ပို့ခြင်း
+        try:
+            bot.send_message(
+                CHANNEL_ID, 
+                f"🔔 **ငွေထုတ်ရန် တောင်းဆိုမှု အသစ်**\n\n"
+                f"👤 အမည်: {user_name} ({username})\n"
+                f"🆔 1xBet ID: `{xbet_id}`\n"
+                f"💰 တောင်းဆိုသည့် ပမာဏ: `{withdraw_amount}`", 
+                parse_mode="Markdown"
+            )
+        except Exception as e:
+            print(f"Channel Error: {e}")
+
         bot.reply_to(message, (
             "✅ ထုတ်ယူရန် အချက်အလက်များကို လက်ခံရရှိပါပြီရှင်။\n\n"
             "ကျေးဇူးပြု၍ လွှဲပြောင်းပေးရမည့် အောက်ပါအကောင့်သို့ ငွေလွှဲပေးပါရန် 🔽\n"
